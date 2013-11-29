@@ -50,6 +50,7 @@ group.add_argument("-u",  "--unfollow",      metavar="id", type=int, help="Unfol
 group.add_argument("-lf", "--list-followed", action="store_true",    help="List the followed shows")
 group.add_argument("-r",  "--refresh",       metavar="id", type=int, help="Refresh the cached version of a TV show")
 group.add_argument("-x",  "--clear-cache",   action="store_true",    help="Clear the cache")
+parser.add_argument("-g", "--search-url",    metavar="url",          help="Generate a query string for the site supplied as argument")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -200,6 +201,7 @@ def check_followed_shows(delay=0, strict_delay=False):
             ret[next_episode_data["name"]]["number"]   = next_episode_data["number"]
             ret[next_episode_data["name"]]["title"]    = next_episode_data["title"]
             ret[next_episode_data["name"]]["air_date"] = next_episode_data["air_date"]
+            ret[next_episode_data["name"]]["season"]   = next_episode_data["season"]
 
     return ret
 
@@ -232,6 +234,13 @@ def clear_cache():
     remove_folder_content(CACHE_DIR_RESEARCH)
     remove_folder_content(CACHE_DIR_SHOWS)
 
+def generate_search_url(data):
+    if args.search_url:
+        url = args.search_url
+        url += data["name"] + "+" + "S"+ str(data["season"]).rjust(2,'0') + "E" + str(data["number"]).rjust(2,'0')
+        return url
+    return 0
+
 # Main
 init()
 
@@ -262,6 +271,9 @@ elif args.list_episodes:
                 print("Number: " + episode)
                 print("Title: " + list_episodes["seasons"][season][episode]["title"])
                 print("Air date: " + list_episodes["seasons"][season][episode]["air_date"])
+                url = generate_search_url({"name": list_episodes["name"], "season": season, "number": episode})
+                if url != 0:
+                    print("url: " + url)
     except ValueError as e:
         print(e)
 
@@ -271,6 +283,9 @@ elif args.next_episode:
         if "number" in next_episode:
             print("Name: " + next_episode["name"])
             print("Next episode: #" + next_episode["number"] + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
+            url = generate_search_url(next_episode)
+            if url != 0:
+                print("url: " + url)
         else:
             print("No known next episode for " + next_episode["name"])
             print("Status: " + next_episode["status"])
@@ -282,6 +297,10 @@ elif args.check:
     for name, data in list(check.items()):
         print("Name: " + name)
         print("Next episode: #" + data["number"] + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
+        data["name"] = name
+        url = generate_search_url(data)
+        if url != 0:
+            print("url: " + url)
 
 elif args.follow:
     try:
