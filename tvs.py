@@ -6,6 +6,7 @@
 
 # TODO: document all the functions
 # TODO: last_episode
+# TODO: allow parameters (delay and strict_delay) to the --check command
 
 # Testcases:
 # Buffy the Vampire Slayer  2930    terminated
@@ -207,6 +208,11 @@ def check_followed_shows(delay=0, strict_delay=False):
 
 def follow(ident):
     ident = str(ident)
+
+    symlink_name = os.path.join(STORAGE_DIR_ID, ident)
+    if os.path.exists(symlink_name):
+        raise ValueError("You already follow this show")
+
     root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
     ret   = root.find("name").text
 
@@ -216,7 +222,7 @@ def follow(ident):
     persistent_file_name = os.path.join(STORAGE_DIR_NAME, urllib.parse.quote_plus(ret.lower()))
     cache_file_name      = os.path.join(CACHE_DIR_SHOWS, ident)
     shutil.copyfile(cache_file_name, persistent_file_name)
-    os.symlink(persistent_file_name, os.path.join(STORAGE_DIR_ID, ident))
+    os.symlink(persistent_file_name, symlink_name)
 
     return ret
 
