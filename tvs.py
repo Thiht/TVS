@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056) "'charmap' codec can't encode character '\u2019' in position 12: character maps to <undefined>"
-# FIXME: get_root() doesn't check the permanent cache (should check STORAGE_DIR_ID)
 
 # TODO: document all the functions
 # TODO: last_episode
@@ -81,10 +80,17 @@ def get_root(cache_dir, url, parameter):
         :param parameter: The parameter to add to the URL
     """
     parameter = urllib.parse.quote_plus(parameter.lower())
-    cache_file_name = os.path.join(cache_dir, parameter)
+    cache_file_name = ""
 
-    if not os.path.exists(cache_file_name):
-        urllib.request.urlretrieve(url + parameter, cache_file_name)
+    if cache_dir == CACHE_DIR_SHOWS: # check the permanent cache
+        permanent_cache_file_name = os.path.join(STORAGE_DIR_ID, parameter)
+        if os.path.exists(permanent_cache_file_name):
+            cache_file_name = permanent_cache_file_name
+
+    if not cache_file_name: # if not found in the permanent cache, check the temporary cache
+        cache_file_name = os.path.join(cache_dir, parameter)
+        if not os.path.exists(cache_file_name): # download from the web if not in any cache
+            urllib.request.urlretrieve(url + parameter, cache_file_name)
 
     root = ElementTree.parse(cache_file_name)
     return root
@@ -228,7 +234,14 @@ def unfollow():
     pass
 
 def list_followed():
-    pass
+    ret = {}
+
+    for file_entry in os.listdir(STORAGE_DIR_NAME):
+        file_path = os.path.join(STORAGE_DIR_NAME, file_entry)
+        root = ElementTree.parse(file_path)
+        ret[root.find("showid").text] =  [root.find("name").text, root.find("showlink").text]
+
+    return ret
 
 def refresh():
     pass
@@ -300,7 +313,10 @@ elif args.unfollow:
     unfollow()
 
 elif args.list_followed:
-    list_followed()
+    list_followed = list_followed()
+    print("Id" + ("\t%-30s" % "Name") + "\tLink")
+    for ident, data in list(list_followed.items()):
+        print(ident + ("\t%-30s" % data[0]) + "\t" + data[1])
 
 elif args.refresh:
     refresh()
