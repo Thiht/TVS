@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 # FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056)
@@ -52,7 +52,7 @@ group.add_argument("-u",  "--unfollow",      metavar="id", type=int, help="Unfol
 group.add_argument("-lf", "--list-followed", action="store_true",    help="List the followed shows")
 group.add_argument("-r",  "--refresh",       metavar="id", type=int, help="Refresh the cached version of a TV show")
 group.add_argument("-x",  "--clear-cache",   action="store_true",    help="Clear the cache")
-if len(sys.argv)==1:
+if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
 args = parser.parse_args()
