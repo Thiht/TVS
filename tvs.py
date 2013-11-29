@@ -1,13 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # -*- coding: utf-8 -*-
 
-# FIXME: Problème d'encodage sous Windows lors de l'affichage de caractères UTF-8 (python .\tvs.py -le 25056)
-# FIXME: get_root() ne vérifie pas dans le cache permanent -> pas possible avec l'implémentation actuelle de recherche par id, voir TODO@2
+# FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056)
+# FIXME: get_root() doesn't check the permanent cache -> not possible with the current implementation by id, see TODO@2
 
-# TODO: Documenter toutes les fonctions
-# TODO: Mettre en cache (temporaire et permanent en cas de follow) name.cache ET id.cache, l'un sous forme de lien symbolique vers l'autre afin de faciliter les différentes opérations -> compliqué, pas de fonction cross-platform pour créer des symlinks
+# TODO: document all the functions
+# TODO: translate this: Mettre en cache (temporaire et permanent en cas de follow) name.cache ET id.cache, l'un sous forme de lien symbolique vers l'autre afin de faciliter les différentes opérations -> compliqué, pas de fonction cross-platform pour créer des symlinks
 # plus simple -> ou utiliser le cache permanent en cas de recherche par nom et le cache temporaire en cas de recherche par id ?
 # simuler des liens symboliques ? id.lnk contient le chemin absolu vers name.cache ? ou simplement son nom, le chemin pouvant être déduit ?
+# TODO: last_episode
 
 # Testcases:
 # Buffy the Vampire Slayer  2930    terminated
@@ -20,6 +21,7 @@ from collections import OrderedDict
 import datetime
 import os
 import shutil
+import sys
 import tempfile
 import urllib
 import urllib2
@@ -50,6 +52,9 @@ group.add_argument("-u",  "--unfollow",      metavar="id", type=int, help="Unfol
 group.add_argument("-lf", "--list-followed", action="store_true",    help="List the followed shows")
 group.add_argument("-r",  "--refresh",       metavar="id", type=int, help="Refresh the cached version of a TV show")
 group.add_argument("-x",  "--clear-cache",   action="store_true",    help="Clear the cache")
+if len(sys.argv)==1:
+    parser.print_help()
+    sys.exit(1)
 args = parser.parse_args()
 
 # Utility functions
@@ -239,9 +244,9 @@ init()
 
 if args.search:
     search = search(args.search)
-    print "Id" + ("\t%-40s" % "Name") + "\tLink"
+    print "Id" + ("\t%-30s" % "Name") + "\tLink"
     for ident, data in search.items():
-        print ident + ("\t%-40s" % data[0]) + "\t" + data[1]
+        print ident + ("\t%-30s" % data[0]) + "\t" + data[1]
 
 elif args.info:
     try:
