@@ -9,10 +9,10 @@
 # plus simple -> ou utiliser le cache permanent en cas de recherche par nom et le cache temporaire en cas de recherche par id ?
 # simuler des liens symboliques ? id.lnk contient le chemin absolu vers name.cache ? ou simplement son nom, le chemin pouvant être déduit ?
 
-# Cas de tests :
-# Buffy the Vampire Slayer  2930    série terminée
-# Better call Saul          37780   pas d'épisodes
-# Homeland                  27811   série en cours
+# Testcases:
+# Buffy the Vampire Slayer  2930    terminated
+# Better call Saul          37780   not started
+# Homeland                  27811   running
 
 # Imports
 import argparse
@@ -119,7 +119,7 @@ def search(name):
     ret  = OrderedDict()
 
     for show in root.findall("show"):
-        ret[show.find("showid").text] = show.find("name").text
+        ret[show.find("showid").text] = [show.find("name").text, show.find("link").text]
 
     return ret;
 
@@ -239,9 +239,9 @@ init()
 
 if args.search:
     search = search(args.search)
-    print "Id\tName"
-    for ident, name in search.items():
-        print ident + "\t" + name
+    print "Id" + ("\t%-40s" % "Name") + "\tLink"
+    for ident, data in search.items():
+        print ident + ("\t%-40s" % data[0]) + "\t" + data[1]
 
 elif args.info:
     try:
