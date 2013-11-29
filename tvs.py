@@ -1,13 +1,10 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056)
-# FIXME: get_root() doesn't check the permanent cache -> not possible with the current implementation by id, see TODO@2
+# FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056) "'charmap' codec can't encode character '\u2019' in position 12: character maps to <undefined>"
+# FIXME: get_root() doesn't check the permanent cache (should check STORAGE_DIR_ID)
 
 # TODO: document all the functions
-# TODO: translate this: Mettre en cache (temporaire et permanent en cas de follow) name.cache ET id.cache, l'un sous forme de lien symbolique vers l'autre afin de faciliter les différentes opérations -> compliqué, pas de fonction cross-platform pour créer des symlinks
-# plus simple -> ou utiliser le cache permanent en cas de recherche par nom et le cache temporaire en cas de recherche par id ?
-# simuler des liens symboliques ? id.lnk contient le chemin absolu vers name.cache ? ou simplement son nom, le chemin pouvant être déduit ?
 # TODO: last_episode
 
 # Testcases:
@@ -23,8 +20,7 @@ import os
 import shutil
 import sys
 import tempfile
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
 import xml.etree.ElementTree as ElementTree
 
 # Constants
@@ -35,6 +31,8 @@ TVRAGE_SHOWINFO_API     = TVRAGE_API + "showinfo.php?sid="
 TVRAGE_EPISODE_LIST_API = TVRAGE_API + "episode_list.php?sid="
 TVRAGE_FULL_SHOW_INFO   = TVRAGE_API + "full_show_info.php?sid="
 STORAGE_DIR             = os.path.join(os.path.expanduser("~"), "." + SCRIPT_NAME)
+STORAGE_DIR_NAME        = os.path.join(STORAGE_DIR, "name")
+STORAGE_DIR_ID          = os.path.join(STORAGE_DIR, "id")
 CACHE_DIR               = os.path.join(tempfile.gettempdir(), SCRIPT_NAME)
 CACHE_DIR_RESEARCH      = os.path.join(CACHE_DIR, "research")
 CACHE_DIR_SHOWS         = os.path.join(CACHE_DIR, "shows")
@@ -71,18 +69,7 @@ def remove_folder_content(folder_path):
                 os.unlink(file_path)
 
         except Exception as e:
-            print e
-
-
-def write_file(data, path):
-    """
-        Write some data to a specified file. Its path must be composed of existing folders, but the file itself doesn't have to exist.
-        :param data: The data to write
-        :param path: The path of the file to write
-    """
-    file_handler = open(path, "w+")
-    file_handler.write(data)
-    file_handler.close()
+            print(e)
 
 def get_root(cache_dir, url, parameter):
     """
@@ -92,17 +79,13 @@ def get_root(cache_dir, url, parameter):
         :param url: The URL from where to download the document if it's not cached
         :param parameter: The parameter to add to the URL
     """
-    parameter = urllib.quote_plus(parameter.lower())
+    parameter = urllib.parse.quote_plus(parameter.lower())
     cache_file_name = os.path.join(cache_dir, parameter)
 
-    if os.path.exists(cache_file_name):
-        root = ElementTree.parse(cache_file_name)
+    if not os.path.exists(cache_file_name):
+        urllib.request.urlretrieve(url + parameter, cache_file_name)
 
-    else:
-        data = urllib2.urlopen(url + parameter).read()
-        root = ElementTree.fromstring(data)
-        write_file(data, cache_file_name)
-
+    root = ElementTree.parse(cache_file_name)
     return root
 
 # Script functions
@@ -118,6 +101,12 @@ def init():
         os.makedirs(STORAGE_DIR)
         if os.name == "nt":
             os.popen("attrib +h " + STORAGE_DIR).close()
+
+    if not os.path.exists(STORAGE_DIR_NAME):
+        os.makedirs(STORAGE_DIR_NAME)
+
+    if not os.path.exists(STORAGE_DIR_ID):
+        os.makedirs(STORAGE_DIR_ID)
 
 def search(name):
     root = get_root(CACHE_DIR_RESEARCH, TVRAGE_SEARCH_API, name)
@@ -157,11 +146,11 @@ def list_episodes(ident):
     episode_list = root.find("Episodelist")
     if episode_list is not None:
         for season in episode_list.findall("Season"):
-            print "Season " + season.get("no")
+            print("Season " + season.get("no"))
             for episode in season.findall("episode"):
-                print "Number: " + episode.find("seasonnum").text
-                print "Title: " + episode.find("title").text
-                print "Air date: " + episode.find("airdate").text
+                print("Number: " + episode.find("seasonnum").text)
+                print("Title: " + episode.find("title").text)
+                print("Air date: " + episode.find("airdate").text)
 
     return ret
 
@@ -200,8 +189,8 @@ def check_followed_shows(delay=0, strict_delay=False):
         :param strict_delay: If True, return the shows whose next episode is in exactly delay days
     """
     ret = {}
-    for file_name in os.listdir(STORAGE_DIR):
-        root = ElementTree.parse(os.path.join(STORAGE_DIR, file_name))
+    for file_name in os.listdir(STORAGE_DIR_NAME):
+        root = ElementTree.parse(os.path.join(STORAGE_DIR_NAME, file_name))
         next_episode_data = next_episode(root.find("showid").text, delay, strict_delay)
         if "number" in next_episode_data:
             ret[next_episode_data["name"]] = {}
@@ -219,9 +208,10 @@ def follow(ident):
     if ret is None:
         raise ValueError("Invalid identifier")
 
-    persistent_file_name = os.path.join(STORAGE_DIR, urllib.quote_plus(ret.lower()))
+    persistent_file_name = os.path.join(STORAGE_DIR_NAME, urllib.parse.quote_plus(ret.lower()))
     cache_file_name      = os.path.join(CACHE_DIR_SHOWS, ident)
     shutil.copyfile(cache_file_name, persistent_file_name)
+    os.symlink(persistent_file_name, os.path.join(STORAGE_DIR_ID, ident))
 
     return ret
 
@@ -244,51 +234,51 @@ init()
 
 if args.search:
     search = search(args.search)
-    print "Id" + ("\t%-30s" % "Name") + "\tLink"
-    for ident, data in search.items():
-        print ident + ("\t%-30s" % data[0]) + "\t" + data[1]
+    print("Id" + ("\t%-30s" % "Name") + "\tLink")
+    for ident, data in list(search.items()):
+        print(ident + ("\t%-30s" % data[0]) + "\t" + data[1])
 
 elif args.info:
     try:
         info = info(args.info)
-        print "Name: " + info["name"]
-        print "Premiere: " + info["started"]
-        print "Status: " + info["status"]
-        print "Genre: " + ", ".join(info["genres"])
-        print "Seasons: " + info["totalseasons"]
+        print("Name: " + info["name"])
+        print("Premiere: " + info["started"])
+        print("Status: " + info["status"])
+        print("Genre: " + ", ".join(info["genres"]))
+        print("Seasons: " + info["totalseasons"])
     except ValueError as e:
-        print e
+        print(e)
 
 elif args.list_episodes:
     try:
         list_episodes(args.list_episodes)
     except ValueError as e:
-        print e
+        print(e)
 
 elif args.next_episode:
     try:
         next_episode = next_episode(args.next_episode)
         if "number" in next_episode:
-            print "Name: " + next_episode["name"]
-            print "Next episode: #" + next_episode["number"] + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"]
+            print("Name: " + next_episode["name"])
+            print("Next episode: #" + next_episode["number"] + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
         else:
-            print "No known next episode for " + next_episode["name"]
-            print "Status: " + next_episode["status"]
+            print("No known next episode for " + next_episode["name"])
+            print("Status: " + next_episode["status"])
     except ValueError as e:
-        print e
+        print(e)
 
 elif args.check:
     check = check_followed_shows()
-    for name, data in check.items():
-        print "Name: " + name
-        print "Next episode: #" + data["number"] + ", \"" + data["title"] + "\"" + ", " + data["air_date"]
+    for name, data in list(check.items()):
+        print("Name: " + name)
+        print("Next episode: #" + data["number"] + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
 
 elif args.follow:
     try:
         name = follow(args.follow)
-        print "You now follow " + name
+        print("You now follow " + name)
     except ValueError as e:
-        print e
+        print(e)
 
 elif args.unfollow:
     unfollow()
@@ -301,4 +291,4 @@ elif args.refresh:
 
 elif args.clear_cache:
     clear_cache()
-    print "Cache cleared"
+    print("Cache cleared")
