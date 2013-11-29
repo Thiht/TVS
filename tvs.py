@@ -145,12 +145,15 @@ def list_episodes(ident):
 
     episode_list = root.find("Episodelist")
     if episode_list is not None:
+        ret["seasons"] = OrderedDict()
         for season in episode_list.findall("Season"):
-            print("Season " + season.get("no"))
+            season_number = season.get("no")
+            ret["seasons"][season_number] = OrderedDict()
             for episode in season.findall("episode"):
-                print("Number: " + episode.find("seasonnum").text)
-                print("Title: " + episode.find("title").text)
-                print("Air date: " + episode.find("airdate").text)
+                episode_number = episode.find("seasonnum").text.lstrip("0")
+                ret["seasons"][season_number][episode_number] = {}
+                ret["seasons"][season_number][episode_number]["title"] = episode.find("title").text
+                ret["seasons"][season_number][episode_number]["air_date"] = episode.find("airdate").text
 
     return ret
 
@@ -251,7 +254,14 @@ elif args.info:
 
 elif args.list_episodes:
     try:
-        list_episodes(args.list_episodes)
+        list_episodes = list_episodes(args.list_episodes)
+        print("Name: " + list_episodes["name"])
+        for season in list_episodes["seasons"]:
+            print("Season: " + season)
+            for episode in list_episodes["seasons"][season]:
+                print("Number: " + episode)
+                print("Title: " + list_episodes["seasons"][season][episode]["title"])
+                print("Air date: " + list_episodes["seasons"][season][episode]["air_date"])
     except ValueError as e:
         print(e)
 
