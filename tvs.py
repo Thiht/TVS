@@ -73,11 +73,13 @@ def remove_folder_content(folder_path):
 
 def get_root(cache_dir, url, parameter):
     """
-        Return the root element of an XML document gathered from the TVRage API or from the cache if the document exists.
-        If it downloads the document, it adds it to the cache.
-        :param cache_dir: The cache directory to search for the asked document
-        :param url: The URL from where to download the document if it's not cached
-        :param parameter: The parameter to add to the URL
+        Return the root element of an XML document gathered from the TVRage API or from
+        the cache if the document exists. If it downloads the document, it adds it to
+        the cache.
+        :param cache_dir: The cache directory to search for the asked document.
+        :param url: The URL from where to download the document if it's not cached.
+        :param parameter: The parameter to add to the URL.
+        :return: The root element of an XML document representing the show passed as parameter.
     """
     parameter = urllib.parse.quote_plus(parameter.lower())
     cache_file_name = ""
@@ -97,7 +99,7 @@ def get_root(cache_dir, url, parameter):
 
 # Script functions
 def init():
-    """Create the cache and storage folders"""
+    """Create the cache and storage folders."""
     if not os.path.exists(CACHE_DIR_RESEARCH):
         os.makedirs(CACHE_DIR_RESEARCH)
 
@@ -153,9 +155,11 @@ def list_episodes(ident):
     episode_list = root.find("Episodelist")
     if episode_list is not None:
         ret["seasons"] = OrderedDict()
+
         for season in episode_list.findall("Season"):
             season_number = season.get("no")
             ret["seasons"][season_number] = OrderedDict()
+
             for episode in season.findall("episode"):
                 episode_number = episode.find("seasonnum").text.lstrip("0")
                 ret["seasons"][season_number][episode_number] = {}
@@ -194,14 +198,16 @@ def next_episode(ident, delay=0, strict_delay=False):
 
 def check_followed_shows(delay=0, strict_delay=False):
     """
-        Return the next episode for each show, in a specified delay
+        Return the next episode for each show, in a specified delay.
         :param delay: If 0, check the next date for the shows starting from today, if 1, starting from tomorrow, if -1, starting from yesterday, etc.
-        :param strict_delay: If True, return the shows whose next episode is in exactly delay days
+        :param strict_delay: If True, return the shows whose next episode is in exactly delay days.
+        :return: A dict on the format { episode_name: { "number": episode_number, "title": episode_title, "air_date": episode_air_date }, ... }
     """
     ret = {}
     for file_name in os.listdir(STORAGE_DIR_NAME):
         root = ElementTree.parse(os.path.join(STORAGE_DIR_NAME, file_name))
         next_episode_data = next_episode(root.find("showid").text, delay, strict_delay)
+
         if "number" in next_episode_data:
             ret[next_episode_data["name"]] = {}
             ret[next_episode_data["name"]]["number"]   = next_episode_data["number"]
@@ -211,6 +217,10 @@ def check_followed_shows(delay=0, strict_delay=False):
     return ret
 
 def follow(ident):
+    """
+        Follow a show.
+        :param ident: The identifier of the show to follow
+    """
     ident = str(ident)
 
     symlink_name = os.path.join(STORAGE_DIR_ID, ident)
@@ -234,6 +244,9 @@ def unfollow():
     pass
 
 def list_followed():
+    """
+        List the followed shows.
+    """
     ret = {}
 
     for file_entry in os.listdir(STORAGE_DIR_NAME):
