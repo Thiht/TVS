@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056) "'charmap' codec can't encode character '\u2019' in position 12: character maps to <undefined>"
-
 # TODO: document all the functions
 # TODO: last_episode
 # TODO: allow parameters (delay and strict_delay) to the --check command
@@ -20,7 +18,7 @@ import os
 import shutil
 import sys
 import tempfile
-import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.parse
 import xml.etree.ElementTree as ElementTree
 
 # Constants
@@ -258,8 +256,14 @@ def list_followed():
 
     return ret
 
-def refresh():
-    pass
+def refresh(ident):
+    ident = str(ident)
+    permanent_cache_file_name = os.path.join(STORAGE_DIR_ID, ident)
+
+    if not os.path.exists(permanent_cache_file_name):
+        raise ValueError("You don't follow this show")
+
+    urllib.request.urlretrieve(TVRAGE_FULL_SHOW_INFO + ident, permanent_cache_file_name)
 
 def clear_cache():
     """Clear the cache folders"""
@@ -270,7 +274,7 @@ def generate_url(url, name, season_number, episode_number):
     """
         Generate a url from the args.generate_url argument.
         Example:
-        Homeland season 1 episode 12 with args.generate_url = 'myAwesomeSite.com/?s=' will produce 'myAwesomeSite.com/?s=Homeland+S01E12'
+        Homeland season 1 episode 12 with args.generate_url = "myAwesomeSite.com/?s=" will produce "myAwesomeSite.com/?s=Homeland+S01E12"
         :param url: The base url
         :param name: The name of the show
         :param season_number: The season number
@@ -353,7 +357,11 @@ elif args.list_followed:
         print(ident + ("\t%-30s" % data[0]) + "\t" + data[1])
 
 elif args.refresh:
-    refresh()
+    try:
+        refresh(args.refresh)
+        print("Cache refreshed")
+    except ValueError as e:
+        print(e)
 
 elif args.clear_cache:
     clear_cache()
