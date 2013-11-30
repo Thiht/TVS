@@ -143,7 +143,7 @@ def info(ident):
 
     return ret
 
-def list_episodes(ident):
+def list_epilsodes(ident):
     ident = str(ident)
     root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
     ret   = {}
