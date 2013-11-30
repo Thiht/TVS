@@ -311,7 +311,7 @@ elif args.list_episodes:
                 print("Title: " + list_episodes["seasons"][season][episode]["title"])
                 print("Air date: " + list_episodes["seasons"][season][episode]["air_date"])
                 if args.generate_url:
-                    print("url: " + generate_url(args.generate_url, list_episodes["name"], season, episode))
+                    print("URL: " + generate_url(args.generate_url, list_episodes["name"], season, episode))
     except ValueError as e:
         print(e)
 
@@ -322,7 +322,7 @@ elif args.next_episode:
             print("Name: " + next_episode["name"])
             print("Next episode: #" + next_episode["number"] + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
             if args.generate_url:
-                print("url: " + generate_url(args.generate_url, next_episode["name"], next_episode["season"], next_episode["number"]))
+                print("URL: " + generate_url(args.generate_url, next_episode["name"], next_episode["season"], next_episode["number"]))
         else:
             print("No known next episode for " + next_episode["name"])
             print("Status: " + next_episode["status"])
