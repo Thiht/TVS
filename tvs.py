@@ -24,7 +24,7 @@ import urllib.request, urllib.parse, urllib.error
 import xml.etree.ElementTree as ElementTree
 
 # Constants
-SCRIPT_NAME             = os.path.splitext(os.path.basename(__file__))[0]
+SCRIPT_NAME             = os.path.splitext(os.path.basename(__file__))[0] # removes the extension of the current script name
 TVRAGE_API              = "http://services.tvrage.com/feeds/"
 TVRAGE_SEARCH_API       = TVRAGE_API + "search.php?show="
 TVRAGE_SHOWINFO_API     = TVRAGE_API + "showinfo.php?sid="
@@ -50,7 +50,7 @@ group.add_argument("-u",  "--unfollow",      metavar="id", type=int, help="Unfol
 group.add_argument("-lf", "--list-followed", action="store_true",    help="List the followed shows")
 group.add_argument("-r",  "--refresh",       metavar="id", type=int, help="Refresh the cached version of a TV show")
 group.add_argument("-x",  "--clear-cache",   action="store_true",    help="Clear the cache")
-parser.add_argument("-gu", "--generate-url", metavar="url",          help="Generate a query string for the site supplied as argument")
+parser.add_argument("-gu", "--generate-url", metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -273,12 +273,11 @@ def generate_url(url, name, season_number, episode_number):
         Homeland season 1 episode 12 with args.generate_url = 'myAwesomeSite.com/?s=' will produce 'myAwesomeSite.com/?s=Homeland+S01E12'
         :param url: The base url
         :param name: The name of the show
-        :param season_number: The season #
-        :param episode_number: The episode #
+        :param season_number: The season number
+        :param episode_number: The episode number
         :return: The formated url
     """
-    url += name + "+" + "S"+ season_number.rjust(2,'0') + "E" + episode_number.rjust(2,'0')
-    return url
+    return url + urllib.parse.quote_plus(name + " " + "S" + season_number.rjust(2, "0") + "E" + episode_number.rjust(2, "0"))
 
 # Main
 init()
