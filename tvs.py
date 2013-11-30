@@ -143,7 +143,7 @@ def info(ident):
 
     return ret
 
-def list_epilsodes(ident):
+def list_episodes(ident):
     ident = str(ident)
     root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
     ret   = {}
@@ -312,8 +312,7 @@ elif args.list_episodes:
                 print("Title: " + list_episodes["seasons"][season][episode]["title"])
                 print("Air date: " + list_episodes["seasons"][season][episode]["air_date"])
                 if args.generate_url:
-                    url = generate_url(args.generate_url, list_episodes["name"], season, episode)
-                    print("url: " + url)
+                    print("url: " + generate_url(args.generate_url, list_episodes["name"], season, episode))
     except ValueError as e:
         print(e)
 
@@ -324,8 +323,7 @@ elif args.next_episode:
             print("Name: " + next_episode["name"])
             print("Next episode: #" + next_episode["number"] + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
             if args.generate_url:
-                url = generate_url(args.generate_url, next_episode["name"], next_episode["season"], next_episode["number"])
-                print("url: " + url)
+                print("url: " + generate_url(args.generate_url, next_episode["name"], next_episode["season"], next_episode["number"]))
         else:
             print("No known next episode for " + next_episode["name"])
             print("Status: " + next_episode["status"])
@@ -338,8 +336,7 @@ elif args.check:
         print("Name: " + name)
         print("Next episode: #" + data["number"] + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
         if args.generate_url:
-            url = generate_url(args.generate_url, name, data["season"], data["number"])
-            print("url: " + url)
+            print("url: " + generate_url(args.generate_url, name, data["season"], data["number"]))
 
 elif args.follow:
     try:
