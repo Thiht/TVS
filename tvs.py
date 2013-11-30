@@ -73,9 +73,8 @@ def remove_folder_content(folder_path):
 
 def get_root(cache_dir, url, parameter):
     """
-        Return the root element of an XML document gathered from the TVRage API or from
-        the cache if the document exists. If it downloads the document, it adds it to
-        the cache.
+        Return the root element of an XML document gathered from the TVRage API or from the cache if the document exists.
+        If it downloads the document, it adds it to the cache.
         :param cache_dir: The cache directory to search for the asked document.
         :param url: The URL from where to download the document if it's not cached.
         :param parameter: The parameter to add to the URL.
@@ -137,7 +136,8 @@ def info(ident):
 
     ret["started"] = root.find("started").text
     ret["status"]  = root.find("status").text
-    ret["genres"]  = [genre.text for genre in root.find("genres").findall("genre") if genre.text is not None]
+    genres = root.find("genres")
+    ret["genres"]  = genres and [genre.text for genre in genres.findall("genre") if genre.text is not None] or []
     ret["totalseasons"] = root.find("totalseasons").text
 
     return ret
