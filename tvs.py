@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # TODO: document all the functions
-# TODO: last_episode
 # TODO: allow parameters (delay and strict_delay) to the --check command
 
 # Testcases:
@@ -38,17 +37,18 @@ CACHE_DIR_SHOWS         = os.path.join(CACHE_DIR, "shows")
 # Arguments
 parser = argparse.ArgumentParser(description="Manage TV shows")
 group  = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-s",  "--search",        metavar="title",        help="Search a TV show")
-group.add_argument("-i",  "--info",          metavar="id", type=int, help="Get information on a show")
-group.add_argument("-le", "--list-episodes", metavar="id", type=int, help="List the episodes of a show")
-group.add_argument("-ne", "--next-episode",  metavar="id", type=int, help="Find the air date of the next episode")
-group.add_argument("-c",  "--check",         action="store_true",    help="Check if there are new episodes for the followed shows")
-group.add_argument("-f",  "--follow",        metavar="id", type=int, help="Follow a show")
-group.add_argument("-u",  "--unfollow",      metavar="id", type=int, help="Unfollow a show")
-group.add_argument("-lf", "--list-followed", action="store_true",    help="List the followed shows")
-group.add_argument("-r",  "--refresh",       metavar="id", type=int, help="Refresh the cached version of a TV show")
-group.add_argument("-x",  "--clear-cache",   action="store_true",    help="Clear the cache")
-parser.add_argument("-gu", "--generate-url", metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c")
+group.add_argument("-s",  "--search",            metavar="title",        help="Search a TV show")
+group.add_argument("-i",  "--info",              metavar="id", type=int, help="Get information on a show")
+group.add_argument("-le", "--list-episodes",     metavar="id", type=int, help="List the episodes of a show")
+group.add_argument("-ne", "--next-episode",      metavar="id", type=int, help="Find the air date of the next episode")
+group.add_argument("-pe", "--previous-episode",  metavar="id", type=int, help="Find the air date of the previous episode")
+group.add_argument("-c",  "--check",             action="store_true",    help="Check if there are new episodes for the followed shows")
+group.add_argument("-f",  "--follow",            metavar="id", type=int, help="Follow a show")
+group.add_argument("-u",  "--unfollow",          metavar="id", type=int, help="Unfollow a show")
+group.add_argument("-lf", "--list-followed",     action="store_true",    help="List the followed shows")
+group.add_argument("-r",  "--refresh",           metavar="id", type=int, help="Refresh the cached version of a TV show")
+group.add_argument("-x",  "--clear-cache",       action="store_true",    help="Clear the cache")
+parser.add_argument("-gu", "--generate-url",     metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -167,33 +167,42 @@ def list_episodes(ident):
 
     return ret
 
-def next_episode(ident, delay=0, strict_delay=False):
+def step_episode(ident, delay=0, strict_delay=False, reverse=False):
     ident = str(ident)
     root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
     ret   = {}
     ret["name"]   = root.find("name").text
-    ret["status"] = root.find("status").text
 
     if ret["name"] is None:
         raise ValueError("Invalid identifier")
 
+    ret["status"] = root.find("status").text
+    delay = reverse and -delay or delay
     comp_date = datetime.datetime.today().date() + datetime.timedelta(days=delay)
     episode_list = root.find("Episodelist")
     if episode_list is not None:
 
-        for season in episode_list.findall("Season"):
+        seasons = reverse and reversed(episode_list.findall("Season")) or episode_list.findall("Season")
+        for season in seasons:
 
-            for episode in season.findall("episode"):
+            episodes = reverse and reversed(season.findall("episode")) or season.findall("episode")
+            for episode in episodes:
                 str_air_date = episode.find("airdate").text
                 air_date     = datetime.datetime.strptime(str_air_date, "%Y-%m-%d").date()
 
-                if (not strict_delay and air_date >= comp_date) or (strict_delay and air_date == comp_date):
+                if (not reverse and not strict_delay and air_date >= comp_date) or (reverse and not strict_delay and air_date <= comp_date) or (strict_delay and air_date == comp_date):
                     ret["season"]   = season.get("no")
                     ret["number"]   = episode.find("seasonnum").text.lstrip("0")
                     ret["title"]    = episode.find("title").text
                     ret["air_date"] = str_air_date
                     return ret
     return ret
+
+def next_episode(ident, delay=0, strict_delay=False):
+    return step_episode(ident, delay, strict_delay)
+
+def previous_episode(ident, delay=0, strict_delay=False):
+    return step_episode(ident, delay, strict_delay, True)
 
 def check_followed_shows(delay=0, strict_delay=False):
     """
@@ -240,8 +249,8 @@ def follow(ident):
 
     return ret
 
-def unfollow():
-    pass
+def unfollow(ident):
+    ident = str(ident)
 
 def list_followed():
     """
@@ -329,6 +338,20 @@ elif args.next_episode:
         else:
             print("No known next episode for " + next_episode["name"])
             print("Status: " + next_episode["status"])
+    except ValueError as e:
+        print(e)
+
+elif args.previous_episode:
+    try:
+        previous_episode = previous_episode(args.previous_episode)
+        if "number" in previous_episode:
+            print("Name: " + previous_episode["name"])
+            print("Previous episode: #" + previous_episode["number"] + ", \"" + previous_episode["title"] + "\"" + ", " + previous_episode["air_date"])
+            if args.generate_url:
+                print("URL: " + generate_url(args.generate_url, previous_episode["name"], previous_episode["season"], previous_episode["number"]))
+        else:
+            print("No known next episode for " + previous_episode["name"])
+            print("Status: " + previous_episode["status"])
     except ValueError as e:
         print(e)
 
