@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # FIXME: Encoding problem on Windows when trying to display UTF-8 chars (ex: python .\tvs.py -le 25056) "'charmap' codec can't encode character '\u2019' in position 12: character maps to <undefined>"
-# FIXME: get_root() doesn't check the permanent cache (should check STORAGE_DIR_ID)
 
 # TODO: document all the functions
 # TODO: last_episode
@@ -75,24 +74,33 @@ def remove_folder_content(folder_path):
 
 def get_root(cache_dir, url, parameter):
     """
-        Return the root element of an XML document gathered from the TVRage API or from the cache if the document exists.
-        If it downloads the document, it adds it to the cache.
-        :param cache_dir: The cache directory to search for the asked document
-        :param url: The URL from where to download the document if it's not cached
-        :param parameter: The parameter to add to the URL
+        Return the root element of an XML document gathered from the TVRage API or from
+        the cache if the document exists. If it downloads the document, it adds it to
+        the cache.
+        :param cache_dir: The cache directory to search for the asked document.
+        :param url: The URL from where to download the document if it's not cached.
+        :param parameter: The parameter to add to the URL.
+        :return: The root element of an XML document representing the show passed as parameter.
     """
     parameter = urllib.parse.quote_plus(parameter.lower())
-    cache_file_name = os.path.join(cache_dir, parameter)
+    cache_file_name = ""
 
-    if not os.path.exists(cache_file_name):
-        urllib.request.urlretrieve(url + parameter, cache_file_name)
+    if cache_dir == CACHE_DIR_SHOWS: # check the permanent cache
+        permanent_cache_file_name = os.path.join(STORAGE_DIR_ID, parameter)
+        if os.path.exists(permanent_cache_file_name):
+            cache_file_name = permanent_cache_file_name
+
+    if not cache_file_name: # if not found in the permanent cache, check the temporary cache
+        cache_file_name = os.path.join(cache_dir, parameter)
+        if not os.path.exists(cache_file_name): # download from the web if not in any cache
+            urllib.request.urlretrieve(url + parameter, cache_file_name)
 
     root = ElementTree.parse(cache_file_name)
     return root
 
 # Script functions
 def init():
-    """Create the cache and storage folders"""
+    """Create the cache and storage folders."""
     if not os.path.exists(CACHE_DIR_RESEARCH):
         os.makedirs(CACHE_DIR_RESEARCH)
 
@@ -148,9 +156,11 @@ def list_episodes(ident):
     episode_list = root.find("Episodelist")
     if episode_list is not None:
         ret["seasons"] = OrderedDict()
+
         for season in episode_list.findall("Season"):
             season_number = season.get("no")
             ret["seasons"][season_number] = OrderedDict()
+
             for episode in season.findall("episode"):
                 episode_number = episode.find("seasonnum").text.lstrip("0")
                 ret["seasons"][season_number][episode_number] = {}
@@ -189,14 +199,16 @@ def next_episode(ident, delay=0, strict_delay=False):
 
 def check_followed_shows(delay=0, strict_delay=False):
     """
-        Return the next episode for each show, in a specified delay
+        Return the next episode for each show, in a specified delay.
         :param delay: If 0, check the next date for the shows starting from today, if 1, starting from tomorrow, if -1, starting from yesterday, etc.
-        :param strict_delay: If True, return the shows whose next episode is in exactly delay days
+        :param strict_delay: If True, return the shows whose next episode is in exactly delay days.
+        :return: A dict on the format { episode_name: { "number": episode_number, "title": episode_title, "air_date": episode_air_date }, ... }
     """
     ret = {}
     for file_name in os.listdir(STORAGE_DIR_NAME):
         root = ElementTree.parse(os.path.join(STORAGE_DIR_NAME, file_name))
         next_episode_data = next_episode(root.find("showid").text, delay, strict_delay)
+
         if "number" in next_episode_data:
             ret[next_episode_data["name"]] = {}
             ret[next_episode_data["name"]]["number"]   = next_episode_data["number"]
@@ -207,6 +219,10 @@ def check_followed_shows(delay=0, strict_delay=False):
     return ret
 
 def follow(ident):
+    """
+        Follow a show.
+        :param ident: The identifier of the show to follow
+    """
     ident = str(ident)
 
     symlink_name = os.path.join(STORAGE_DIR_ID, ident)
@@ -230,7 +246,17 @@ def unfollow():
     pass
 
 def list_followed():
-    pass
+    """
+        List the followed shows.
+    """
+    ret = {}
+
+    for file_entry in os.listdir(STORAGE_DIR_NAME):
+        file_path = os.path.join(STORAGE_DIR_NAME, file_entry)
+        root = ElementTree.parse(file_path)
+        ret[root.find("showid").text] =  [root.find("name").text, root.find("showlink").text]
+
+    return ret
 
 def refresh():
     pass
@@ -319,7 +345,10 @@ elif args.unfollow:
     unfollow()
 
 elif args.list_followed:
-    list_followed()
+    list_followed = list_followed()
+    print("Id" + ("\t%-30s" % "Name") + "\tLink")
+    for ident, data in list(list_followed.items()):
+        print(ident + ("\t%-30s" % data[0]) + "\t" + data[1])
 
 elif args.refresh:
     refresh()
