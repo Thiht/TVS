@@ -269,9 +269,8 @@ def clear_cache():
 def generate_url(url, name, season_number, episode_number):
     """
         Generate a url from the args.generate_url argument.
-        example :
-        Homeland season 1 episode 12 with args.generate_url = 'myAwesomeSite.com/?s='
-        will produce 'myAwesomeSite.com/?s=Homeland+S01E12'
+        Example:
+        Homeland season 1 episode 12 with args.generate_url = 'myAwesomeSite.com/?s=' will produce 'myAwesomeSite.com/?s=Homeland+S01E12'
         :param url: The base url
         :param name: The name of the show
         :param season_number: The season #
@@ -336,7 +335,7 @@ elif args.check:
         print("Name: " + name)
         print("Next episode: #" + data["number"] + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
         if args.generate_url:
-            print("url: " + generate_url(args.generate_url, name, data["season"], data["number"]))
+            print("URL: " + generate_url(args.generate_url, name, data["season"], data["number"]))
 
 elif args.follow:
     try:
