@@ -38,18 +38,18 @@ CACHE_LIFETIME          = datetime.timedelta(days=7)
 # Arguments
 parser = argparse.ArgumentParser(description="Manage TV shows")
 group  = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-s",  "--search",            metavar="title",        help="Search a TV show")
-group.add_argument("-i",  "--info",              metavar="id", type=int, help="Get information on a show")
-group.add_argument("-le", "--list-episodes",     metavar="id", type=int, help="List the episodes of a show")
-group.add_argument("-ne", "--next-episode",      metavar="id", type=int, help="Find the air date of the next episode")
-group.add_argument("-pe", "--previous-episode",  metavar="id", type=int, help="Find the air date of the previous episode")
-group.add_argument("-c",  "--check",             action="store_true",    help="Check if there are new episodes for the followed shows")
-group.add_argument("-f",  "--follow",            metavar="id", type=int, help="Follow a show")
-group.add_argument("-u",  "--unfollow",          metavar="id", type=int, help="Unfollow a show")
-group.add_argument("-lf", "--list-followed",     action="store_true",    help="List the followed shows")
-group.add_argument("-r",  "--refresh",           metavar="id", type=int, help="Refresh the cached version of a TV show")
-group.add_argument("-x",  "--clear-cache",       action="store_true",    help="Clear the cache")
-parser.add_argument("-gu", "--generate-url",     metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c")
+group.add_argument("-s",  "--search",           metavar="title",        help="Search a TV show")
+group.add_argument("-i",  "--info",             metavar="id", type=int, help="Get information on a show")
+group.add_argument("-le", "--list-episodes",    metavar="id", type=int, help="List the episodes of a show")
+group.add_argument("-ne", "--next-episode",     metavar="id", type=int, help="Find the air date of the next episode")
+group.add_argument("-pe", "--previous-episode", metavar="id", type=int, help="Find the air date of the previous episode")
+group.add_argument("-c",  "--check",            action="store_true",    help="Check if there are new episodes for the followed shows")
+group.add_argument("-f",  "--follow",           metavar="id", type=int, help="Follow a show")
+group.add_argument("-u",  "--unfollow",         metavar="id", type=int, help="Unfollow a show")
+group.add_argument("-lf", "--list-followed",    action="store_true",    help="List the followed shows")
+group.add_argument("-r",  "--refresh",          metavar="id", type=int, help="Refresh the cached version of a TV show")
+group.add_argument("-x",  "--clear-cache",      action="store_true",    help="Clear the cache")
+parser.add_argument("-gu", "--generate-url",    metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -71,6 +71,13 @@ def remove_folder_content(folder_path):
         except Exception as e:
             print(e)
 
+def internet_connection_available():
+    try:
+        urllib.request.urlopen("http://google.com", timeout=1) # Google should always be available
+        return True
+    except urllib.URLError:
+        return False
+
 def get_root(cache_dir, url, parameter):
     """
         Return the root element of an XML document gathered from the TVRage API or from the cache if the document exists.
@@ -86,14 +93,16 @@ def get_root(cache_dir, url, parameter):
     if cache_dir == CACHE_DIR_SHOWS: # check the permanent cache
         permanent_cache_file_name = os.path.join(STORAGE_DIR_ID, parameter)
         if os.path.exists(permanent_cache_file_name):
-            if datetime.datetime.fromtimestamp(os.path.getmtime(permanent_cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date():
+            if (datetime.datetime.fromtimestamp(os.path.getmtime(permanent_cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date()
+                and internet_connection_available()):
                 urllib.request.urlretrieve(url + parameter, permanent_cache_file_name)
             cache_file_name = permanent_cache_file_name
 
     if not cache_file_name: # if not found in the permanent cache, check the temporary cache
         cache_file_name = os.path.join(cache_dir, parameter)
         if (not os.path.exists(cache_file_name)
-            or (datetime.datetime.fromtimestamp(os.path.getmtime(cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date())): # download from the web if not in any cache
+            or (datetime.datetime.fromtimestamp(os.path.getmtime(cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date()
+                and internet_connection_available())): # download from the web if not in any cache
             urllib.request.urlretrieve(url + parameter, cache_file_name)
 
     root = ElementTree.parse(cache_file_name)
@@ -194,7 +203,10 @@ def step_episode(ident, delay=0, strict_delay=False, reverse=False):
                 str_air_date = episode.find("airdate").text
                 air_date     = datetime.datetime.strptime(str_air_date, "%Y-%m-%d").date()
 
-                if (not reverse and not strict_delay and air_date >= comp_date) or (reverse and not strict_delay and air_date <= comp_date) or (strict_delay and air_date == comp_date):
+                if ((not reverse and not strict_delay and air_date >= comp_date)
+                    or (reverse and not strict_delay and air_date <= comp_date)
+                    or (strict_delay and air_date == comp_date)):
+
                     ret["season"]   = season.get("no")
                     ret["number"]   = episode.find("seasonnum").text.lstrip("0")
                     ret["title"]    = episode.find("title").text
@@ -324,7 +336,7 @@ elif args.list_episodes:
             print("Season: " + season)
             for episode in list_episodes["seasons"][season]:
                 print("Number: " + episode)
-                print("Title: " + list_episodes["seasons"][season][episode]["title"])
+                print("Title: " + list_episodes["seasons"][season][episode]["title"]) # print("Title: " + list_episodes["seasons"][season][episode]["title"].encode(sys.stdout.encoding, "replace"))
                 print("Air date: " + list_episodes["seasons"][season][episode]["air_date"])
                 if args.generate_url:
                     print("URL: " + generate_url(args.generate_url, list_episodes["name"], season, episode))
