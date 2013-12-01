@@ -332,7 +332,7 @@ elif args.next_episode:
         next_episode = next_episode(args.next_episode)
         if "number" in next_episode:
             print("Name: " + next_episode["name"])
-            print("Next episode: #" + next_episode["number"] + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
+            print("Next episode: " + next_episode["season"] + "x" + next_episode["number"].rjust(2, "0") + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
             if args.generate_url:
                 print("URL: " + generate_url(args.generate_url, next_episode["name"], next_episode["season"], next_episode["number"]))
         else:
@@ -346,7 +346,7 @@ elif args.previous_episode:
         previous_episode = previous_episode(args.previous_episode)
         if "number" in previous_episode:
             print("Name: " + previous_episode["name"])
-            print("Previous episode: #" + previous_episode["number"] + ", \"" + previous_episode["title"] + "\"" + ", " + previous_episode["air_date"])
+            print("Previous episode: " + previous_episode["season"] + "x" + previous_episode["number"].rjust(2, "0") + ", \"" + previous_episode["title"] + "\"" + ", " + previous_episode["air_date"])
             if args.generate_url:
                 print("URL: " + generate_url(args.generate_url, previous_episode["name"], previous_episode["season"], previous_episode["number"]))
         else:
@@ -359,9 +359,10 @@ elif args.check:
     check = check_followed_shows()
     for name, data in list(check.items()):
         print("Name: " + name)
-        print("Next episode: #" + data["number"] + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
+        print("Next episode: " + data["season"] + "x" + data["number"].rjust(2, "0") + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
         if args.generate_url:
             print("URL: " + generate_url(args.generate_url, name, data["season"], data["number"]))
+        print()
 
 elif args.follow:
     try:
