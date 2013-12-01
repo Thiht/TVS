@@ -33,6 +33,7 @@ STORAGE_DIR_ID          = os.path.join(STORAGE_DIR, "id")
 CACHE_DIR               = os.path.join(tempfile.gettempdir(), SCRIPT_NAME)
 CACHE_DIR_RESEARCH      = os.path.join(CACHE_DIR, "research")
 CACHE_DIR_SHOWS         = os.path.join(CACHE_DIR, "shows")
+CACHE_LIFETIME          = datetime.timedelta(days=7)
 
 # Arguments
 parser = argparse.ArgumentParser(description="Manage TV shows")
@@ -85,11 +86,14 @@ def get_root(cache_dir, url, parameter):
     if cache_dir == CACHE_DIR_SHOWS: # check the permanent cache
         permanent_cache_file_name = os.path.join(STORAGE_DIR_ID, parameter)
         if os.path.exists(permanent_cache_file_name):
+            if datetime.datetime.fromtimestamp(os.path.getmtime(permanent_cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date():
+                urllib.request.urlretrieve(url + parameter, permanent_cache_file_name)
             cache_file_name = permanent_cache_file_name
 
     if not cache_file_name: # if not found in the permanent cache, check the temporary cache
         cache_file_name = os.path.join(cache_dir, parameter)
-        if not os.path.exists(cache_file_name): # download from the web if not in any cache
+        if (not os.path.exists(cache_file_name)
+            or (datetime.datetime.fromtimestamp(os.path.getmtime(cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date())): # download from the web if not in any cache
             urllib.request.urlretrieve(url + parameter, cache_file_name)
 
     root = ElementTree.parse(cache_file_name)
