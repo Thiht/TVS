@@ -27,12 +27,12 @@ TVRAGE_SHOWINFO_API     = TVRAGE_API + "showinfo.php?sid="
 TVRAGE_EPISODE_LIST_API = TVRAGE_API + "episode_list.php?sid="
 TVRAGE_FULL_SHOW_INFO   = TVRAGE_API + "full_show_info.php?sid="
 STORAGE_DIR             = os.path.join(os.path.expanduser("~"), "." + SCRIPT_NAME)
-STORAGE_DIR_NAME        = os.path.join(STORAGE_DIR, "name")
+STORAGE_DIR_NAME        = os.path.join(STORAGE_DIR, "name") # Not used for now but could be in the future...
 STORAGE_DIR_ID          = os.path.join(STORAGE_DIR, "id")
 CACHE_DIR               = os.path.join(tempfile.gettempdir(), SCRIPT_NAME)
 CACHE_DIR_RESEARCH      = os.path.join(CACHE_DIR, "research")
 CACHE_DIR_SHOWS         = os.path.join(CACHE_DIR, "shows")
-CACHE_LIFETIME          = datetime.timedelta(days=7)
+CACHE_LIFETIME          = datetime.timedelta(days=1)
 
 # Arguments
 parser = argparse.ArgumentParser(description="Manage TV shows")
@@ -72,11 +72,15 @@ def remove_folder_content(folder_path):
         except Exception as e:
             print(e)
 
+glob_internet_connection_available = False
 def internet_connection_available():
     """
         Check if an internet connection is available.
         :return: True if an internet connection is available
     """
+    if glob_internet_connection_available:
+        return True
+
     try:
         urllib.request.urlopen("http://google.com", timeout=1) # Google should always be available
         return True
