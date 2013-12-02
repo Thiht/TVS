@@ -73,6 +73,10 @@ def remove_folder_content(folder_path):
             print(e)
 
 def internet_connection_available():
+    """
+        Check if an internet connection is available.
+        :return: True if an internet connection is available
+    """
     try:
         urllib.request.urlopen("http://google.com", timeout=1) # Google should always be available
         return True
@@ -229,8 +233,8 @@ def check_followed_shows(delay=0, strict_delay=False):
         :return: A dict on the format { episode_name: { "number": episode_number, "title": episode_title, "air_date": episode_air_date }, ... }
     """
     ret = {}
-    for file_name in os.listdir(STORAGE_DIR_NAME):
-        root = ElementTree.parse(os.path.join(STORAGE_DIR_NAME, file_name))
+    for file_name in os.listdir(STORAGE_DIR_ID):
+        root = ElementTree.parse(os.path.join(STORAGE_DIR_ID, file_name))
         next_episode_data = next_episode(root.find("showid").text, delay, strict_delay)
 
         if "number" in next_episode_data:
@@ -269,14 +273,26 @@ def follow(ident):
 def unfollow(ident):
     ident = str(ident)
 
+    symlink_name = os.path.join(STORAGE_DIR_ID, ident)
+    if not os.path.exists(symlink_name):
+        raise ValueError("You don't follow this show")
+
+    root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
+    ret   = root.find("name").text
+
+    os.remove(os.readlink(symlink_name))
+    os.remove(symlink_name)
+
+    return ret
+
 def list_followed():
     """
         List the followed shows.
     """
     ret = {}
 
-    for file_entry in os.listdir(STORAGE_DIR_NAME):
-        file_path = os.path.join(STORAGE_DIR_NAME, file_entry)
+    for file_entry in os.listdir(STORAGE_DIR_ID):
+        file_path = os.path.join(STORAGE_DIR_ID, file_entry)
         root = ElementTree.parse(file_path)
         ret[root.find("showid").text] =  [root.find("name").text, root.find("showlink").text]
 
@@ -389,7 +405,11 @@ elif args.follow:
         print(e)
 
 elif args.unfollow:
-    unfollow()
+    try:
+        name = unfollow(args.unfollow)
+        print("You don't follow " + name + " anymore")
+    except ValueError as e:
+        print(e)
 
 elif args.list_followed:
     list_followed = list_followed()
