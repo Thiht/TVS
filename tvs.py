@@ -49,7 +49,9 @@ group.add_argument("-u",  "--unfollow",         metavar="id", type=int, help="Un
 group.add_argument("-lf", "--list-followed",    action="store_true",    help="List the followed shows")
 group.add_argument("-r",  "--refresh",          metavar="id", type=int, help="Refresh the cached version of a TV show")
 group.add_argument("-x",  "--clear-cache",      action="store_true",    help="Clear the cache")
-parser.add_argument("-gu", "--generate-url",    metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c")
+parser.add_argument("-gu", "--generate-url",    metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c)")
+parser.add_argument("-d",  "--delay",           metavar="days", type=int, default=0, help="(works with -le, -ne and -c)")
+parser.add_argument("-sd", "--strict_delay",    action="store_true",    help="(works with -le, -ne and -c)")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -345,7 +347,7 @@ elif args.list_episodes:
 
 elif args.next_episode:
     try:
-        next_episode = next_episode(args.next_episode)
+        next_episode = next_episode(args.next_episode, args.delay, args.strict_delay)
         if "number" in next_episode:
             print("Name: " + next_episode["name"])
             print("Next episode: " + next_episode["season"] + "x" + next_episode["number"].rjust(2, "0") + ", \"" + next_episode["title"] + "\"" + ", " + next_episode["air_date"])
@@ -359,7 +361,7 @@ elif args.next_episode:
 
 elif args.previous_episode:
     try:
-        previous_episode = previous_episode(args.previous_episode)
+        previous_episode = previous_episode(args.previous_episode, args.delay, args.strict_delay)
         if "number" in previous_episode:
             print("Name: " + previous_episode["name"])
             print("Previous episode: " + previous_episode["season"] + "x" + previous_episode["number"].rjust(2, "0") + ", \"" + previous_episode["title"] + "\"" + ", " + previous_episode["air_date"])
@@ -372,7 +374,7 @@ elif args.previous_episode:
         print(e)
 
 elif args.check:
-    check = check_followed_shows()
+    check = check_followed_shows(args.delay, args.strict_delay)
     for name, data in list(check.items()):
         print("Name: " + name)
         print("Next episode: " + data["season"] + "x" + data["number"].rjust(2, "0") + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
