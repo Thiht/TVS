@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # TODO: document all the functions
-# TODO: allow parameters (delay and strict_delay) to the --check command
 
 # Testcases:
 # Buffy the Vampire Slayer  2930    terminated
@@ -50,8 +49,8 @@ group.add_argument("-lf", "--list-followed",    action="store_true",    help="Li
 group.add_argument("-r",  "--refresh",          metavar="id", type=int, help="Refresh the cached version of a TV show")
 group.add_argument("-x",  "--clear-cache",      action="store_true",    help="Clear the cache")
 parser.add_argument("-gu", "--generate-url",    metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c)")
-parser.add_argument("-d",  "--delay",           metavar="days", type=int, default=0, help="(works with -le, -ne and -c)")
-parser.add_argument("-sd", "--strict_delay",    action="store_true",    help="(works with -le, -ne and -c)")
+parser.add_argument("-d",  "--delay",           metavar="days", type=int, default=0, help="Will look for the episodes within a delay of 'days' (works with -le, -ne and -c). Default: %(default)s")
+parser.add_argument("-sd", "--strict_delay",    action="store_true",    help="Will look for the episodes with a delay of exactly 'delay' days (works with -le, -ne and -c)")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
