@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# TODO: document all the functions
-
 # Testcases:
 # Buffy the Vampire Slayer  2930    terminated
 # Better call Saul          37780   not started
