@@ -191,15 +191,15 @@ def step_episode(ident, delay=0, strict_delay=False, reverse=False):
     ident = str(ident)
     root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
     ret   = {}
-    ret["name"]   = root.find("name").text
+    ret["name"] = root.find("name").text
 
     if ret["name"] is None:
         raise ValueError("Invalid identifier")
 
     ret["status"] = root.find("status").text
-    delay = reverse and -delay or delay
-    comp_date = datetime.datetime.today().date() + datetime.timedelta(days=delay)
-    episode_list = root.find("Episodelist")
+    delay         = reverse and -delay or delay
+    comp_date     = datetime.datetime.today().date() + datetime.timedelta(days=delay)
+    episode_list  = root.find("Episodelist")
     if episode_list is not None:
 
         seasons = reverse and reversed(episode_list.findall("Season")) or episode_list.findall("Season")
@@ -259,8 +259,8 @@ def follow(ident):
     if os.path.exists(symlink_name):
         raise ValueError("You already follow this show")
 
-    root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
-    ret   = root.find("name").text
+    root = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
+    ret  = root.find("name").text
 
     if ret is None:
         raise ValueError("Invalid identifier")
@@ -279,8 +279,8 @@ def unfollow(ident):
     if not os.path.exists(symlink_name):
         raise ValueError("You don't follow this show")
 
-    root  = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
-    ret   = root.find("name").text
+    root = get_root(CACHE_DIR_SHOWS, TVRAGE_FULL_SHOW_INFO, ident)
+    ret  = root.find("name").text
 
     os.remove(os.readlink(symlink_name))
     os.remove(symlink_name)
