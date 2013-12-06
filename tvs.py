@@ -208,17 +208,20 @@ def step_episode(ident, delay=0, strict_delay=False, reverse=False):
             episodes = reverse and reversed(season.findall("episode")) or season.findall("episode")
             for episode in episodes:
                 str_air_date = episode.find("airdate").text
-                air_date     = datetime.datetime.strptime(str_air_date, "%Y-%m-%d").date()
+                try:
+                    air_date     = datetime.datetime.strptime(str_air_date, "%Y-%m-%d").date()
 
-                if ((not reverse and not strict_delay and air_date >= comp_date)
-                    or (reverse and not strict_delay and air_date <= comp_date)
-                    or (strict_delay and air_date == comp_date)):
+                    if ((not reverse and not strict_delay and air_date >= comp_date)
+                        or (reverse and not strict_delay and air_date <= comp_date)
+                        or (strict_delay and air_date == comp_date)):
 
-                    ret["season"]   = season.get("no")
-                    ret["number"]   = episode.find("seasonnum").text.lstrip("0")
-                    ret["title"]    = episode.find("title").text
-                    ret["air_date"] = str_air_date
-                    return ret
+                        ret["season"]   = season.get("no")
+                        ret["number"]   = episode.find("seasonnum").text.lstrip("0")
+                        ret["title"]    = episode.find("title").text
+                        ret["air_date"] = str_air_date
+                        return ret
+                except ValueError:
+                    pass
     return ret
 
 def next_episode(ident, delay=0, strict_delay=False):
