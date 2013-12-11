@@ -30,25 +30,25 @@ STORAGE_DIR_ID          = os.path.join(STORAGE_DIR, "id")
 CACHE_DIR               = os.path.join(tempfile.gettempdir(), SCRIPT_NAME)
 CACHE_DIR_RESEARCH      = os.path.join(CACHE_DIR, "research")
 CACHE_DIR_SHOWS         = os.path.join(CACHE_DIR, "shows")
-CACHE_LIFETIME          = datetime.timedelta(days=1)
+CACHE_LIFETIME          = datetime.timedelta(days=0)
 
 # Arguments
 parser = argparse.ArgumentParser(description="Manage TV shows")
 group  = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-s",  "--search",           metavar="title",        help="Search a TV show")
-group.add_argument("-i",  "--info",             metavar="id", type=int, help="Get information on a show")
-group.add_argument("-le", "--list-episodes",    metavar="id", type=int, help="List the episodes of a show")
-group.add_argument("-ne", "--next-episode",     metavar="id", type=int, help="Find the air date of the next episode")
-group.add_argument("-pe", "--previous-episode", metavar="id", type=int, help="Find the air date of the previous episode")
-group.add_argument("-c",  "--check",            action="store_true",    help="Check if there are new episodes for the followed shows")
-group.add_argument("-f",  "--follow",           metavar="id", type=int, help="Follow a show")
-group.add_argument("-u",  "--unfollow",         metavar="id", type=int, help="Unfollow a show")
-group.add_argument("-lf", "--list-followed",    action="store_true",    help="List the followed shows")
-group.add_argument("-r",  "--refresh",          metavar="id", type=int, help="Refresh the cached version of a TV show")
-group.add_argument("-x",  "--clear-cache",      action="store_true",    help="Clear the cache")
-parser.add_argument("-gu", "--generate-url",    metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c)")
-parser.add_argument("-d",  "--delay",           metavar="days", type=int, default=0, help="Will look for the episodes within a delay of 'days' (works with -le, -ne and -c). Default: %(default)s")
-parser.add_argument("-sd", "--strict_delay",    action="store_true",    help="Will look for the episodes with a delay of exactly 'delay' days (works with -le, -ne and -c)")
+group.add_argument("-s",   "--search",           metavar="title",        help="Search a TV show")
+group.add_argument("-i",   "--info",             metavar="id", type=int, help="Get information on a show")
+group.add_argument("-le",  "--list-episodes",    metavar="id", type=int, help="List the episodes of a show")
+group.add_argument("-ne",  "--next-episode",     metavar="id", type=int, help="Find the air date of the next episode")
+group.add_argument("-pe",  "--previous-episode", metavar="id", type=int, help="Find the air date of the previous episode")
+group.add_argument("-c",   "--check",            action="store_true",    help="Check if there are new episodes for the followed shows")
+group.add_argument("-f",   "--follow",           metavar="id", type=int, help="Follow a show")
+group.add_argument("-u",   "--unfollow",         metavar="id", type=int, help="Unfollow a show")
+group.add_argument("-lf",  "--list-followed",    action="store_true",    help="List the followed shows")
+group.add_argument("-r",   "--refresh",          metavar="id", type=int, help="Refresh the cached version of a TV show")
+group.add_argument("-x",   "--clear-cache",      action="store_true",    help="Clear the temporary cache")
+parser.add_argument("-gu", "--generate-url",     metavar="url",          help="Generate a query string for the site supplied as argument (works with -le, -ne and -c)")
+parser.add_argument("-d",  "--delay",            metavar="days", type=int, default=0, help="Will look for the episodes within a delay of 'days' (works with -le, -ne and -c). Default: %(default)s")
+parser.add_argument("-sd", "--strict_delay",     action="store_true",    help="Will look for the episodes with a delay of exactly 'delay' days (works with -le, -ne and -c)")
 if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -76,11 +76,14 @@ def internet_connection_available():
         Check if an internet connection is available.
         :return: True if an internet connection is available
     """
+    global glob_internet_connection_available
+
     if glob_internet_connection_available:
         return True
 
     try:
         urllib.request.urlopen("http://google.com", timeout=1) # Google should always be available
+        glob_internet_connection_available = True
         return True
     except urllib.URLError:
         return False
@@ -393,7 +396,6 @@ elif args.previous_episode:
         print(e)
 
 elif args.check:
-    #check = check_followed_shows(args.delay, args.strict_delay)
     for data in check_followed_shows(args.delay, args.strict_delay):
         print("Name: " + data["name"])
         print("Next episode: " + data["season"] + "x" + data["number"].rjust(2, "0") + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
@@ -430,4 +432,4 @@ elif args.refresh:
 
 elif args.clear_cache:
     clear_cache()
-    print("Cache cleared")
+    print("Temporary cache cleared")
