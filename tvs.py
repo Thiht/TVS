@@ -232,10 +232,10 @@ def previous_episode(ident, delay=0, strict_delay=False):
 
 def check_followed_shows(delay=0, strict_delay=False):
     """
-        Return the next episode for each show, in a specified delay.
+        Generate the next episode for each show, in a specified delay.
         :param delay: If 0, check the next date for the shows starting from today, if 1, starting from tomorrow, if -1, starting from yesterday, etc.
-        :param strict_delay: If True, return the shows whose next episode is in exactly delay days.
-        :return: A dict on the format { episode_name: { "number": episode_number, "title": episode_title, "air_date": episode_air_date }, ... }
+        :param strict_delay: If True, return the shows whose next episode is in exactly delay days
+        :return: A dict on the format { "name": episode_name, number": episode_number, "title": episode_title, "air_date": episode_air_date } for each followed show
     """
     ret = {}
     for file_name in os.listdir(STORAGE_DIR_ID):
@@ -243,13 +243,12 @@ def check_followed_shows(delay=0, strict_delay=False):
         next_episode_data = next_episode(root.find("showid").text, delay, strict_delay)
 
         if "number" in next_episode_data:
-            ret[next_episode_data["name"]] = {}
-            ret[next_episode_data["name"]]["number"]   = next_episode_data["number"]
-            ret[next_episode_data["name"]]["title"]    = next_episode_data["title"]
-            ret[next_episode_data["name"]]["air_date"] = next_episode_data["air_date"]
-            ret[next_episode_data["name"]]["season"]   = next_episode_data["season"]
-
-    return ret
+            ret["name"] = next_episode_data["name"]
+            ret["number"]   = next_episode_data["number"]
+            ret["title"]    = next_episode_data["title"]
+            ret["air_date"] = next_episode_data["air_date"]
+            ret["season"]   = next_episode_data["season"]
+            yield ret
 
 def follow(ident):
     """
@@ -394,12 +393,12 @@ elif args.previous_episode:
         print(e)
 
 elif args.check:
-    check = check_followed_shows(args.delay, args.strict_delay)
-    for name, data in list(check.items()):
-        print("Name: " + name)
+    #check = check_followed_shows(args.delay, args.strict_delay)
+    for data in check_followed_shows(args.delay, args.strict_delay):
+        print("Name: " + data["name"])
         print("Next episode: " + data["season"] + "x" + data["number"].rjust(2, "0") + ", \"" + data["title"] + "\"" + ", " + data["air_date"])
         if args.generate_url:
-            print("URL: " + generate_url(args.generate_url, name, data["season"], data["number"]))
+            print("URL: " + generate_url(args.generate_url, data["name"], data["season"], data["number"]))
         print()
 
 elif args.follow:
