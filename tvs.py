@@ -15,7 +15,7 @@ import shutil
 import sys
 import tempfile
 import urllib.request, urllib.parse
-import xml.etree.ElementTree as ElementTree
+from xml.etree import ElementTree
 
 # Constants
 SCRIPT_NAME             = os.path.splitext(os.path.basename(__file__))[0] # removes the extension of the current script name
@@ -300,9 +300,10 @@ def list_followed():
     for file_entry in os.listdir(STORAGE_DIR_ID):
         file_path = os.path.join(STORAGE_DIR_ID, file_entry)
         root = ElementTree.parse(file_path)
-        ret[root.find("showid").text] =  [root.find("name").text, root.find("showlink").text]
-
-    return ret
+        ret["id"]   = root.find("showid").text
+        ret["name"] = root.find("name").text
+        ret["link"] = root.find("showlink").text
+        yield ret
 
 def refresh(ident):
     ident = str(ident)
@@ -417,10 +418,9 @@ elif args.unfollow:
         print(e)
 
 elif args.list_followed:
-    list_followed = list_followed()
     print("Id" + ("\t%-30s" % "Name") + "\tLink")
-    for ident, data in list(list_followed.items()):
-        print(ident + ("\t%-30s" % data[0]) + "\t" + data[1])
+    for data in list_followed():
+        print(data["id"] + ("\t%-30s" % data["name"]) + "\t" + data["link"])
 
 elif args.refresh:
     try:
