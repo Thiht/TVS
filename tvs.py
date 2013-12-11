@@ -30,7 +30,7 @@ STORAGE_DIR_ID          = os.path.join(STORAGE_DIR, "id")
 CACHE_DIR               = os.path.join(tempfile.gettempdir(), SCRIPT_NAME)
 CACHE_DIR_RESEARCH      = os.path.join(CACHE_DIR, "research")
 CACHE_DIR_SHOWS         = os.path.join(CACHE_DIR, "shows")
-CACHE_LIFETIME          = datetime.timedelta(days=0)
+CACHE_LIFETIME          = datetime.timedelta(days=1)
 
 # Arguments
 parser = argparse.ArgumentParser(description="Manage TV shows")
@@ -78,15 +78,14 @@ def internet_connection_available():
     """
     global glob_internet_connection_available
 
-    if glob_internet_connection_available:
-        return True
+    if not glob_internet_connection_available:
+        try:
+            urllib.request.urlopen("http://google.com", timeout=1) # Google should always be available
+            glob_internet_connection_available = True
+        except urllib.URLError:
+            pass
 
-    try:
-        urllib.request.urlopen("http://google.com", timeout=1) # Google should always be available
-        glob_internet_connection_available = True
-        return True
-    except urllib.URLError:
-        return False
+    return glob_internet_connection_available
 
 def get_root(cache_dir, url, parameter):
     """
