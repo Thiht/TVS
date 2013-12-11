@@ -360,7 +360,8 @@ elif args.list_episodes:
             print("Season: " + season)
             for episode in list_episodes["seasons"][season]:
                 print("Number: " + episode)
-                print("Title: " + list_episodes["seasons"][season][episode]["title"]) # print("Title: " + list_episodes["seasons"][season][episode]["title"].encode(sys.stdout.encoding, "replace"))
+                testaj = list_episodes["seasons"][season][episode]["title"].encode(sys.stdout.encoding, "replace")
+                print("Title: " + list_episodes["seasons"][season][episode]["title"].encode(sys.stdout.encoding, "replace").decode())
                 print("Air date: " + list_episodes["seasons"][season][episode]["air_date"])
                 if args.generate_url:
                     print("URL: " + generate_url(args.generate_url, list_episodes["name"], season, episode))
