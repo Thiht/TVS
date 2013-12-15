@@ -11,6 +11,7 @@ import argparse
 from collections import OrderedDict
 import datetime
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -25,7 +26,7 @@ TVRAGE_SHOWINFO_API     = TVRAGE_API + "showinfo.php?sid="
 TVRAGE_EPISODE_LIST_API = TVRAGE_API + "episode_list.php?sid="
 TVRAGE_FULL_SHOW_INFO   = TVRAGE_API + "full_show_info.php?sid="
 STORAGE_DIR             = os.path.join(os.path.expanduser("~"), "." + SCRIPT_NAME)
-STORAGE_DIR_NAME        = os.path.join(STORAGE_DIR, "name") # Not used for now but could be in the future...
+STORAGE_DIR_NAME        = os.path.join(STORAGE_DIR, "name") # Used to display lists in alphabetical order
 STORAGE_DIR_ID          = os.path.join(STORAGE_DIR, "id")
 CACHE_DIR               = os.path.join(tempfile.gettempdir(), SCRIPT_NAME)
 CACHE_DIR_RESEARCH      = os.path.join(CACHE_DIR, "research")
@@ -111,7 +112,7 @@ def get_root(cache_dir, url, parameter):
         cache_file_name = os.path.join(cache_dir, parameter)
         if (not os.path.exists(cache_file_name)
             or (datetime.datetime.fromtimestamp(os.path.getmtime(cache_file_name)).date() + CACHE_LIFETIME <= datetime.datetime.today().date()
-                and internet_connection_available())): # download from the web if not in any cache
+            and internet_connection_available())): # download from the web if not in any cache
             urllib.request.urlretrieve(url + parameter, cache_file_name)
 
     root = ElementTree.parse(cache_file_name)
@@ -240,8 +241,9 @@ def check_followed_shows(delay=0, strict_delay=False):
         :return: A dict on the format { "name": episode_name, number": episode_number, "title": episode_title, "air_date": episode_air_date } for each followed show
     """
     ret = {}
-    for file_name in os.listdir(STORAGE_DIR_ID):
-        root = ElementTree.parse(os.path.join(STORAGE_DIR_ID, file_name))
+
+    for file_name in os.listdir(STORAGE_DIR_NAME):
+        root = ElementTree.parse(os.path.join(STORAGE_DIR_NAME, file_name))
         next_episode_data = next_episode(root.find("showid").text, delay, strict_delay)
 
         if "number" in next_episode_data:
@@ -297,8 +299,8 @@ def list_followed():
     """
     ret = {}
 
-    for file_entry in os.listdir(STORAGE_DIR_ID):
-        file_path = os.path.join(STORAGE_DIR_ID, file_entry)
+    for file_entry in os.listdir(STORAGE_DIR_NAME):
+        file_path = os.path.join(STORAGE_DIR_NAME, file_entry)
         root = ElementTree.parse(file_path)
         ret["id"]   = root.find("showid").text
         ret["name"] = root.find("name").text
